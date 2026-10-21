@@ -58,6 +58,8 @@
 #include <string.h>
 #include <unistd.h>
 
+#include <string>
+
 // application specific
 #include "robotiq_ft_sensor_hardware/rq_sensor_com.h"
 
@@ -1169,13 +1171,14 @@ void stop_connection()
  */
 static UINT_8 rq_com_identify_device(INT_8 const* const d_name)
 {
-  INT_8 dirParent[20] = { 0 };
-  INT_8 port_com[15] = { 0 };
-
-  strcpy(dirParent, "/dev/");
-  strcat(dirParent, d_name);
-  strcpy(port_com, dirParent);
-  fd_connexion = open(port_com, O_RDWR | O_NOCTTY | O_NDELAY | O_EXCL);
+  // The old buffers were 15 and 20 bytes, so only "ttyUSB0" fit. A by-id path
+  // overflowed them and could open the wrong adapter.
+  if (d_name == nullptr || d_name[0] == '\0')
+  {
+    return 0;
+  }
+  const std::string port_com = std::string("/dev/") + d_name;
+  fd_connexion = open(port_com.c_str(), O_RDWR | O_NOCTTY | O_NDELAY | O_EXCL);
 
   // The serial port is open
   if (fd_connexion != -1)
